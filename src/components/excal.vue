@@ -6,6 +6,7 @@
   <el-button type="primary">主要按钮</el-button>
   <el-button type="success">成功按钮</el-button>
     </el-row>-->
+    <!-- 导入 -->
     <el-upload
       class="upload-demo"
       action
@@ -21,6 +22,8 @@
       <el-button size="small" type="primary">点击上传</el-button>
       <div slot="tip" class="el-upload__tip">只 能 上 传 xlsx / xls 文 件</div>
     </el-upload>
+    <!-- 导出 -->
+    <el-button @click="outExe">导出</el-button>
   </div>
 </template>
 
@@ -32,30 +35,34 @@ export default {
       msg: "hello,Element",
       limitUpload: 1,
       fileTemp: "",
-      file:"",
-      fileListUpload: []
+      file: "",
+      fileListUpload: [],
+      excelData:[],
+      dataList:[{userId:1,name:'小白',age:'18',status:"上学"},{userId:2,name:'小黑',age:'22',status:"待业"},{userId:3,name:'小红',age:'28',status:"就业"}]
     };
   },
   methods: {
-    handleChange(file,fileList){
+    handleChange(file, fileList) {
       // console.log(file)
       this.fileTemp = file.raw;
-      if(this.fileTemp){
+      if (this.fileTemp) {
         // console.log(this.fileTemp.type)
-        if(this.fileTemp.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-          this.fileTemp.type == "application/vnd.ms-excel"){
-          this.importfxx(this.fileTemp)
-        }else{
+        if (
+          this.fileTemp.type ==
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+          this.fileTemp.type == "application/vnd.ms-excel"
+        ) {
+          this.importfxx(this.fileTemp);
+        } else {
           this.$message({
-            type:"warning",
-            message:"附件格式错误，请删除后重新上传!"
+            type: "warning",
+            message: "附件格式错误，请删除后重新上传!"
           });
         }
       }
-      
     },
     importfxx(obj) {
-      console.log(obj)
+      console.log(obj);
       let _this = this;
       // 通过DOM取文件数据
       this.file = obj;
@@ -121,7 +128,45 @@ export default {
         } 个文件，共选择了 ${files.length + fileList.length} 个文件`
       );
     },
-    
+    // 导出
+    outExe() {
+      this.$confirm("此操作将导出excel文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          this.excelData = this.dataList; //你要导出的数据list。
+          this.export2Excel();
+        })
+        .catch(() => {});
+    },
+    export2Excel() {
+      var that = this;
+      require.ensure([], () => {
+        const { export_json_to_excel } = require("../excal/Export2Excel"); //这里必须使用绝对路径，根据自己的命名和路径
+        const tHeader = [
+          "userId",
+          "name",
+          "age",
+          "status",
+        ]; // 导出的表头名
+        const filterVal = [
+          "userId",
+          "name",
+          "age",
+          "status",
+        ]; // 导出的表头字段名
+        const list = that.excelData;
+        // that.excelData为传入的数据
+        const data = that.formatJson(filterVal, list);
+        export_json_to_excel(tHeader, data, `测试导出excel`); // 导出的表格名称，根据需要自己命名
+        // tHeader为导出Excel表头名称，`xxxxxx`即为导出Excel名称
+      });
+    },
+    formatJson(filterVal, jsonData) {
+      return jsonData.map(v => filterVal.map(j => v[j]));
+    }
   }
 };
 </script>
